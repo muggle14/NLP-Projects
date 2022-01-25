@@ -157,10 +157,7 @@ def train(training_file_name, dev_file_name, test_file_name, maps_file_name, cha
                 if global_step % 100 == 0:
                     print('iteration:{} step:{}/{}, NER loss:{:>9.6f}'.format(i+1, global_step%steps_per_epoch, steps_per_epoch, np.mean(loss)))
                     loss = []
-            # evaluate the model on development data
-            best = evaluate(sess, model, 'dev', dev_manager, id_to_tag)
-            # if have better dev F1 score until now, then save the model
-            if best:
+            if best := evaluate(sess, model, 'dev', dev_manager, id_to_tag):
                 model.saver.save(sess=sess, save_path=os.path.join(FLAGS.ckpt_dir, 'Brands_ner.ckpt'), global_step=model.global_step.eval())
             # report the test F1 score
             evaluate(sess, model, 'test', test_manager, id_to_tag)
@@ -203,8 +200,7 @@ def test_ner(results, path):
             to_write.append('\n')
 
         f.writelines(to_write)
-    eval_lines = return_report(output_file)
-    return eval_lines
+    return return_report(output_file)
 
 def main(_):
     if FLAGS.clean:

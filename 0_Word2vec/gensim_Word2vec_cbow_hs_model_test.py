@@ -31,7 +31,7 @@ model.train(sentences=training_file, total_examples=model.corpus_count, epochs=m
 #model = Word2Vec.load(save_path)
 
 
-aa = model.most_similar(u'奔驰')[0:10]
+aa = model.most_similar(u'奔驰')[:10]
 for word, score in aa:
     print('{} {}'.format(word.encode('utf-8'), score))
 '''

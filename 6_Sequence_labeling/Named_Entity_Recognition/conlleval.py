@@ -163,11 +163,9 @@ def metrics(counts):
     overall = calculate_metrics(
         c.correct_chunk, c.found_guessed, c.found_correct
     )
-    by_type = {}
-    for t in uniq(list(c.t_found_correct) + list(c.t_found_guessed)):
-        by_type[t] = calculate_metrics(
+    by_type = {t: calculate_metrics(
             c.t_correct_chunk[t], c.t_found_guessed[t], c.t_found_correct[t]
-        )
+        ) for t in uniq(list(c.t_found_correct) + list(c.t_found_guessed))}
     return overall, by_type
 
 
@@ -204,29 +202,39 @@ def report_notprint(counts, out=None):
     overall, by_type = metrics(counts)
 
     c = counts
-    final_report = []
-    line = []
-    line.append('processed %d tokens with %d phrases; ' %
-              (c.token_counter, c.found_correct))
-    line.append('found: %d phrases; correct: %d.\n' %
-              (c.found_guessed, c.correct_chunk))
-    final_report.append("".join(line))
+    line = [
+        (
+            'processed %d tokens with %d phrases; '
+            % (c.token_counter, c.found_correct)
+        ),
+        (
+            'found: %d phrases; correct: %d.\n'
+            % (c.found_guessed, c.correct_chunk)
+        ),
+    ]
 
+    final_report = ["".join(line)]
     if c.token_counter > 0:
-        line = []
-        line.append('accuracy: %6.2f%%; ' %
-                  (100.*c.correct_tags/c.token_counter))
-        line.append('precision: %6.2f%%; ' % (100.*overall.prec))
-        line.append('recall: %6.2f%%; ' % (100.*overall.rec))
-        line.append('FB1: %6.2f\n' % (100.*overall.fscore))
+        line = [
+            (
+                'accuracy: %6.2f%%; '
+                % (100.0 * c.correct_tags / c.token_counter)
+            ),
+            'precision: %6.2f%%; ' % (100.0 * overall.prec),
+            'recall: %6.2f%%; ' % (100.0 * overall.rec),
+            'FB1: %6.2f\n' % (100.0 * overall.fscore),
+        ]
+
         final_report.append("".join(line))
 
     for i, m in sorted(by_type.items()):
-        line = []
-        line.append('%17s: ' % i)
-        line.append('precision: %6.2f%%; ' % (100.*m.prec))
-        line.append('recall: %6.2f%%; ' % (100.*m.rec))
-        line.append('FB1: %6.2f  %d\n' % (100.*m.fscore, c.t_found_guessed[i]))
+        line = [
+            '%17s: ' % i,
+            'precision: %6.2f%%; ' % (100.0 * m.prec),
+            'recall: %6.2f%%; ' % (100.0 * m.rec),
+            'FB1: %6.2f  %d\n' % (100.0 * m.fscore, c.t_found_guessed[i]),
+        ]
+
         final_report.append("".join(line))
     return final_report
 
@@ -236,9 +244,8 @@ def end_of_chunk(prev_tag, tag, prev_type, type_):
     # arguments: previous and current chunk tags, previous and current types
     chunk_end = False
 
-    if prev_tag == 'E': chunk_end = True
-    if prev_tag == 'S': chunk_end = True
-
+    if prev_tag in ['E', 'S']:
+        chunk_end = True
     if prev_tag == 'B' and tag == 'B': chunk_end = True
     if prev_tag == 'B' and tag == 'S': chunk_end = True
     if prev_tag == 'B' and tag == 'O': chunk_end = True
@@ -250,9 +257,8 @@ def end_of_chunk(prev_tag, tag, prev_type, type_):
         chunk_end = True
 
     # these chunks are assumed to have length 1
-    if prev_tag == ']': chunk_end = True
-    if prev_tag == '[': chunk_end = True
-
+    if prev_tag in [']', '[']:
+        chunk_end = True
     return chunk_end
 
 
@@ -261,9 +267,8 @@ def start_of_chunk(prev_tag, tag, prev_type, type_):
     # arguments: previous and current chunk tags, previous and current types
     chunk_start = False
 
-    if tag == 'B': chunk_start = True
-    if tag == 'S': chunk_start = True
-
+    if tag in ['B', 'S']:
+        chunk_start = True
     if prev_tag == 'E' and tag == 'E': chunk_start = True
     if prev_tag == 'E' and tag == 'I': chunk_start = True
     if prev_tag == 'S' and tag == 'E': chunk_start = True
@@ -275,9 +280,8 @@ def start_of_chunk(prev_tag, tag, prev_type, type_):
         chunk_start = True
 
     # these chunks are assumed to have length 1
-    if tag == '[': chunk_start = True
-    if tag == ']': chunk_start = True
-
+    if tag in ['[', ']']:
+        chunk_start = True
     return chunk_start
 
 

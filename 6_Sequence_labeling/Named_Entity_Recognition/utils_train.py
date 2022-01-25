@@ -60,7 +60,7 @@ def iobes_iob(tags):
     IOBES -> IOB
     """
     new_tags = []
-    for i, tag in enumerate(tags):
+    for tag in tags:
         if tag.split('-')[0] == 'B':
             new_tags.append(tag)
         elif tag.split('-')[0] == 'I':
@@ -110,10 +110,10 @@ class BatchManager(object):
         #print('len(data):{}, batch_size:{}, num_batch:{}'.format(len(data), batch_size, num_batch))
         # for minimal padding, sort them according to sequence length
         sorted_data = sorted(data, key=lambda x: len(x[0]))
-        batch_data = list()
-        for i in range(num_batch): # iterate the data
-            batch_data.append(self.pad_data(sorted_data[i*batch_size : (i+1)*batch_size]))
-        return batch_data
+        return [
+            self.pad_data(sorted_data[i * batch_size : (i + 1) * batch_size])
+            for i in range(num_batch)
+        ]
 
     @staticmethod
     def pad_data(data):
@@ -121,7 +121,7 @@ class BatchManager(object):
         chars = []
         segs = []
         targets = []
-        max_length = max([len(sentence[0]) for sentence in data])
+        max_length = max(len(sentence[0]) for sentence in data)
         for line in data:
             string, char, seg, target = line
             padding = [0] * (max_length - len(string))

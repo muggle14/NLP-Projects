@@ -66,9 +66,10 @@ if __name__ == '__main__':
         final_results.write(u'输入文档：\n')
         final_results.write(test_doc+'\n')
         final_results.write(u'相似文档：\n')
-        sims = []
-        for each_train_vec in training_vecs:
-            sims.append(1-cosine(each_train_vec, test_doc_vec))
+        sims = [
+            1 - cosine(each_train_vec, test_doc_vec)
+            for each_train_vec in training_vecs
+        ]
 
         sims = sorted(enumerate(sims), key=lambda item: -item[1])
         for num, value in sims[:3]:

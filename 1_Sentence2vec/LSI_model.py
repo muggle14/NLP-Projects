@@ -22,8 +22,7 @@ class sogou_corpus_file(object):
     def __init__(self, fname):
         self.fname = fname
     def __iter__(self):
-        for line in codecs.open(filename=self.fname, mode='r', encoding='utf-8'):
-            yield line
+        yield from codecs.open(filename=self.fname, mode='r', encoding='utf-8')
 
 if __name__ == '__main__':
 
