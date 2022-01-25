@@ -74,10 +74,7 @@ class BrandsNERModel:
             with tf.variable_scope('word_embedding_layer'), tf.device('/cpu:0'):
                 self.word_embeddings = tf.get_variable(name='word_embeddings', shape=[self.num_words_types, self.word_dims], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer())
                 char_and_word_embeddings.append(tf.nn.embedding_lookup(params=self.word_embeddings, ids=word_inputs, name='word_embeddings_loopup'))
-        # shape of rtn_embeddings: [None, None, self.char_dims + self.word_dims]
-        # axis=2 is also ok
-        rtn_embeddings = tf.concat(values=char_and_word_embeddings, axis=-1)
-        return rtn_embeddings
+        return tf.concat(values=char_and_word_embeddings, axis=-1)
 
     def birnn_layer(self, rnn_inputs, rnn_num_units, seq_lengths):
         """
@@ -85,11 +82,15 @@ class BrandsNERModel:
         :return: concatenated forward and backward outputs.
         """
         with tf.variable_scope('birnn_layer'):
-            rnn_cells = {}
-            for tmp in ['forward', 'backward']:
-                # according to 'Neural Architectures for Named Entity Recognition' Section 2.1
-                # CoupledInputForgetGateLSTMCell from paper 'LSTM: A Search Space Odyssey', where f = 1- i.
-                rnn_cells[tmp] = tf.contrib.rnn.CoupledInputForgetGateLSTMCell(num_units=rnn_num_units, use_peepholes=True, initializer=tf.contrib.layers.xavier_initializer())
+            rnn_cells = {
+                tmp: tf.contrib.rnn.CoupledInputForgetGateLSTMCell(
+                    num_units=rnn_num_units,
+                    use_peepholes=True,
+                    initializer=tf.contrib.layers.xavier_initializer(),
+                )
+                for tmp in ['forward', 'backward']
+            }
+
             # obtain 'contextual word representation' through bi-rnn according to https://guillaumegenthial.github.io/sequence-tagging-with-tensorflow.html
             outputs, output_states = tf.nn.bidirectional_dynamic_rnn(cell_fw=rnn_cells['forward'], cell_bw=rnn_cells['backward'], inputs=rnn_inputs, sequence_length=seq_lengths, dtype=tf.float32)
         # concatenate forward output and backward output: [None, None, self.rnn_units + self.rnn_units]
@@ -204,8 +205,7 @@ class BrandsNERModel:
         """
         _, tmp_chars, tmp_words, tmp_tags = mini_batch
 
-        mini_batch_fd = {}
-        mini_batch_fd[self.char_inputs] = np.asarray(tmp_chars)
+        mini_batch_fd = {self.char_inputs: np.asarray(tmp_chars)}
         mini_batch_fd[self.word_inputs] = np.asarray(tmp_words)
         mini_batch_fd[self.keep_prob] = keep_prop
 
@@ -253,27 +253,28 @@ class BrandsNERModel:
         results = []
         if self.use_crf:
             transition_matrix = sess.run(self.transition_matrix)
-        
+
         for mini_batch in data_manager.iter_batch():
             tmp_strings = mini_batch[0]
             tmp_tags = mini_batch[-1]
             tmp_lengths, tmp_logits = self.step(sess, mini_batch, is_training=False, keep_prop=1.0)
-            
+
             if self.use_crf:
                 batch_paths = self.decode(tmp_logits, tmp_lengths, transition_matrix)
             else:
                 batch_paths = sess.run(tf.cast(tf.argmax(tmp_logits, axis=-1), tf.int32))
-                
+
             for i in range(len(tmp_strings)):
-                result = []
                 string = tmp_strings[i][:tmp_lengths[i]]
                 # real tags
                 gold = iobes_iob([id_to_tag[int(x)] for x in tmp_tags[i][:tmp_lengths[i]]])
                 # predicted tags
                 pred = iobes_iob([id_to_tag[int(x)] for x in batch_paths[i][:tmp_lengths[i]]])
-                # for each sample in one batch, store the character, real tag and predicted tag
-                for char, gold, pred in zip(string, gold, pred):
-                    result.append(' '.join([char, gold, pred]))
+                result = [
+                    ' '.join([char, gold, pred])
+                    for char, gold, pred in zip(string, gold, pred)
+                ]
+
                 # stores the whole data for all mini-batches
                 results.append(result)
         return results

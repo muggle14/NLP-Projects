@@ -26,15 +26,12 @@ def forward(obs, hidden_states, pi, a, b):
 
 
     # hidden state at t = len(obs)-1 should be 'E' or 'S'
-    prob = sum([alpha[len(obs)-1][i] for i in 'ES'])
+    prob = sum(alpha[len(obs)-1][i] for i in 'ES')
     return prob, alpha
 
 def backward(obs, hidden_states, pi, a, b):
     # shape: (number of chars of obs, number of hidden_states)
-    beta = []
-    for _ in range(len(obs)):
-        beta.append({})
-
+    beta = [{} for _ in range(len(obs))]
     # initialization for t = len(obs) - 1
     for i in hidden_states:
         beta[len(obs)-1][i] = 0 # since whole probabilities are in log scale, and log(1) = 0
@@ -49,7 +46,7 @@ def backward(obs, hidden_states, pi, a, b):
             beta[t][i] = sum(back_status_list)
 
     # hidden state at t = 0 should be 'B' or 'S'
-    prob = sum([pi[i]+b[i].get(obs[0], MIN_FLOAT)+beta[0][i] for i in 'BS'])
+    prob = sum(pi[i]+b[i].get(obs[0], MIN_FLOAT)+beta[0][i] for i in 'BS')
     return prob, beta
 
 

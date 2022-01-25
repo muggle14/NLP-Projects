@@ -28,10 +28,12 @@ def viterbi(obs, hidden_states, pi, a, b):
             Psi[t][i] = max_state
 
     # the final state should be in ['E', 'S']
-    best_prob, best_state = max([(Delta[len(obs)-1][i], i) for i in 'ES'], key=itemgetter(0))
+    best_prob, best_state = max(
+        ((Delta[len(obs) - 1][i], i) for i in 'ES'), key=itemgetter(0)
+    )
 
-    best_path = [] # generate most possible hidden states in order
-    best_path.append(best_state)
+
+    best_path = [best_state]
     for inv in range(len(obs)-1, 0, -1):
         best_state = Psi[inv][best_state]
         best_path.insert(0, best_state)
@@ -72,7 +74,12 @@ if __name__ == '__main__':
     # for generating example data
     for h_s in hidden_states:
         print('='*10 + '>' + h_s)
-        top_three = sorted(observation_seq_gen_pro_mat[h_s].items(), key=itemgetter(1), reverse=True)[0:3]
+        top_three = sorted(
+            observation_seq_gen_pro_mat[h_s].items(),
+            key=itemgetter(1),
+            reverse=True,
+        )[:3]
+
         for w in top_three:
             print(w[0].encode('utf-8'))
             print(observation_seq_gen_pro_mat[h_s][w[0]])

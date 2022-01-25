@@ -91,8 +91,7 @@ def input_from_line(line, char_to_id):
     """
     line = full_to_half(line)
     line = replace_html(line)
-    inputs = list()
-    inputs.append([line])
+    inputs = [[line]]
     line.replace(' ', '$')
     inputs.append([[char_to_id[char] if char in char_to_id else char_to_id['<UNK>'] for char in line]])
     inputs.append([get_seg_features(line)])
@@ -126,8 +125,7 @@ def result_to_json(string, tags):
     item = {'string': string, 'entities': []}
     entity_name = ""
     entity_start = 0
-    idx = 0
-    for char, tag in zip(string, tags):
+    for idx, (char, tag) in enumerate(zip(string, tags)):
         if tag[0] == 'S':
             item['entities'].append({'word': char, 'start': idx, 'end': idx+1, 'type':tag[2:]})
         elif tag[0] == 'B':
@@ -142,7 +140,6 @@ def result_to_json(string, tags):
         else:
             entity_name = ""
             entity_start = idx
-        idx += 1
     return item
 
 def save_config(config, config_file):
@@ -170,7 +167,7 @@ def load_word2vec(emb_path, id_to_word, word_dim, old_weights):
     print('Loading pretrained embeddings from {}...'.format(emb_path))
     pre_trained = {}
     emb_invalid = 0
-    for i, line in enumerate(codecs.open(emb_path, 'r', 'utf-8')):
+    for line in codecs.open(emb_path, 'r', 'utf-8'):
         # line format: [character_a, 0.0824, -0.335, ..., 'word_dim' embeddings]
         line = line.rstrip().split()
         if len(line) == word_dim + 1: # valid embedding
@@ -252,7 +249,12 @@ def augment_with_pretrained(dictionary, ext_emb_path, chars):
 
     # 'pretrained' contains characters that have pre-trained embedding vector
     # line format: character_a 0.0824 -0.335 ... 100 embeddings
-    pretrained = set([line.rstrip().split()[0].strip() for line in codecs.open(ext_emb_path, 'r', 'utf-8') if len(ext_emb_path) > 0])
+    pretrained = {
+        line.rstrip().split()[0].strip()
+        for line in codecs.open(ext_emb_path, 'r', 'utf-8')
+        if len(ext_emb_path) > 0
+    }
+
 
     if chars is None: # add every character that has a pre-trained embedding to the dictionary
         for char in pretrained:
@@ -308,26 +310,20 @@ def load_sentences(path, zeros):
     """
     sentences = []
     sentence = []
-    num = 0
     for line in codecs.open(path, 'r', 'utf8'):
-        num += 1
         line = zero_digits(line.rstrip()) if zeros else line.rstrip()
-        if not line:
-            if len(sentence) > 0:
-                if 'DOCSTART' not in sentence[0][0]:
-                    sentences.append(sentence)
-                sentence = []
-        else:
+        if line:
             if line[0] == " ":
                 line = "$" + line[1:]
-                word = line.split()
-            else:
-                word= line.split()
+            word = line.split()
             if len(word) >= 2:
                 sentence.append(word)
-    if len(sentence) > 0:
-        if 'DOCSTART' not in sentence[0][0]:
-            sentences.append(sentence)
+        elif sentence:
+            if 'DOCSTART' not in sentence[0][0]:
+                sentences.append(sentence)
+            sentence = []
+    if sentence and 'DOCSTART' not in sentence[0][0]:
+        sentences.append(sentence)
     return sentences
 
 def clean(params, maps_file_name, config_file_name, results_file_path):

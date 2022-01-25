@@ -7,27 +7,22 @@ import os
 def pre_process(text):
     """Word segmentation and filtering.
     """
-    if text != None:
-        newline_removed_list = []
-        split_lines = text.splitlines()
-        for each_line in split_lines:
-            each_line = each_line.strip()
-            each_line = re.sub(r'[\s+]', '', each_line)
-            each_line = re.sub(u'(@[\u4e00-\u9fa5A-Za-z0-9_-]{1,30})', '', each_line)
-            if len(each_line) > 0:
-                newline_removed_list.append(re.sub(' +', '', each_line))
-
-        filtered_str = ' '.join(newline_removed_list)
-        if len(filtered_str) > 0:
-            str_seg = [m.strip() for m in jb.lcut(filtered_str) if (m.strip() not in stopwordsCN) and (len(m.strip()) > 0)]
-            if len(str_seg) >= 10:
-                return ' '.join(str_seg)
-            else:
-                return 'failed to process'
-        else:
-            return 'failed to process'
-    else:
+    if text is None:
         return 'failed to process'
+    newline_removed_list = []
+    split_lines = text.splitlines()
+    for each_line in split_lines:
+        each_line = each_line.strip()
+        each_line = re.sub(r'[\s+]', '', each_line)
+        each_line = re.sub(u'(@[\u4e00-\u9fa5A-Za-z0-9_-]{1,30})', '', each_line)
+        if len(each_line) > 0:
+            newline_removed_list.append(re.sub(' +', '', each_line))
+
+    filtered_str = ' '.join(newline_removed_list)
+    if len(filtered_str) <= 0:
+        return 'failed to process'
+    str_seg = [m.strip() for m in jb.lcut(filtered_str) if (m.strip() not in stopwordsCN) and (len(m.strip()) > 0)]
+    return ' '.join(str_seg) if len(str_seg) >= 10 else 'failed to process'
 
 def get_category(curr_http):
     rtn_category_num = '-1'

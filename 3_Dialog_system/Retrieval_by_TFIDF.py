@@ -66,8 +66,7 @@ class sogou_corpus_file(object):
         self.fname = fname
 
     def __iter__(self):
-        for line in codecs.open(filename=self.fname, mode='r', encoding='utf-8'):
-            yield line
+        yield from codecs.open(filename=self.fname, mode='r', encoding='utf-8')
 
 
 if __name__ == '__main__':
@@ -86,10 +85,7 @@ if __name__ == '__main__':
     corpus_tfidf_mm = MmCorpus(os.path.join(training_file_path, '07_11_corpus_12.mm'))
 
     training_src_data = sogou_corpus_file(os.path.join(training_file_path, 'neg_1.txt'))
-    training_src = []
-    for each_file in training_src_data:
-        training_src.append(each_file)
-
+    training_src = list(training_src_data)
     # convert counts to tfidf
     tfidf = TfidfModel(corpus=corpus_tfidf_mm)
 

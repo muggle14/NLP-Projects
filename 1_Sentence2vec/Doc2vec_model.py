@@ -20,8 +20,7 @@ class sogou_corpus_file(object):
     def __init__(self, fname):
         self.fname = fname
     def __iter__(self):
-        for line in codecs.open(filename=self.fname, mode='r', encoding='utf-8'):
-            yield line
+        yield from codecs.open(filename=self.fname, mode='r', encoding='utf-8')
 
 if __name__ == '__main__':
 
@@ -35,10 +34,7 @@ if __name__ == '__main__':
 
     # read original input
     training_src_data = sogou_corpus_file(os.path.join(training_file_path, 'sohu_text_similarity_training.corpus'))
-    training_src = []
-    for each_file in training_src_data:
-        training_src.append(each_file)
-
+    training_src = list(training_src_data)
     # read original test data
     final_results = codecs.open(os.path.join(training_file_path, 'doc2vec_similarity.res'), mode='a', encoding='utf-8')
 
